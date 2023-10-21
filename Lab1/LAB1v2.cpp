@@ -136,6 +136,8 @@ void recursiveSearch(const string &word, const string &directory){
     } while(FindNextFileA(hFIND, &ffd) != 0);
     FindClose(hFIND);
 
+
+
 }
 
 int main(){
