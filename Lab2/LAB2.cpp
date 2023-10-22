@@ -5,7 +5,7 @@
 #include <vector>
 using namespace std;
 
-void createDirectoryRecursively(const string &directory){
+void createDirectoryRecursively(const string &directory){  
      const string separators("\\");
   
     DWORD fileAttributes = GetFileAttributesA(directory.c_str());
@@ -60,29 +60,9 @@ void writeToFile(const string &path, const string &buffer){
 
 }
 
-
-
-
-
-int main(){
-
-    vector<HKEY> keyList = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_CONFIG, HKEY_CURRENT_USER};
-    DWORD subKeysCount, maxSubKeyLen;
-    FILETIME lastWriteTime;
-    SYSTEMTIME systemTime;
-    LONG result;
-    vector<string> hiveFiles = {"HKLM.txt", "HKCC.txt", "HKCU.txt"};
-    LARGE_INTEGER filesize;
-    string writeContent;
-
-    createDirectoryRecursively("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\InstalledSoftware");
-    createDirectoryRecursively("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate");
-    
-    for(int i = 0; i < hiveFiles.size(); i++){  // files coresponding to hives creation
-        string file = "C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate\\" + hiveFiles[i];
-
-        HANDLE hFile = CreateFileA(
-      file.c_str(),
+void createFile(const string &path){
+    HANDLE hFile = CreateFileA(
+      path.c_str(),
       GENERIC_WRITE,
       0,
       NULL,
@@ -91,12 +71,50 @@ int main(){
       NULL
    );
    if(hFile == INVALID_HANDLE_VALUE ){
-    cerr << "Error creating file: " << file << " (" << GetLastError() << ")" << endl;
-    return GetLastError();
+    cerr << "Error creating file: " << path << " (" << GetLastError() << ")" << endl;
    }
 
    CloseHandle(hFile);        
     
+    }
+void createRegistryKey(HKEY hRootKey, const string &keyPath){
+    HKEY hKey;
+    LONG result = RegCreateKeyExA(hRootKey, keyPath.c_str(), 0, NULL, 0, KEY_WRITE, NULL, &hKey, NULL);
+
+    if(result != ERROR_SUCCESS){
+        cerr << "Error creating key: " << keyPath << "(Error code: " << result << ")" << endl;
+        RegCloseKey(hKey);
+    }
+
+    else{
+        RegCloseKey(hKey);
+    }
+}
+
+
+
+
+
+
+int main(){
+
+    vector<HKEY> keyList = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_CONFIG, HKEY_CURRENT_USER};
+    DWORD subKeysCount, maxSubKeyLen, filesCreatedCount;
+    FILETIME lastWriteTime;
+    SYSTEMTIME systemTime;
+    LONG result, value;
+    vector<string> hiveFiles = {"HKLM.txt", "HKCC.txt", "HKCU.txt"};
+    LARGE_INTEGER filesize;
+    string writeContent;
+    HKEY hkcuSoftware;
+    HKEY hKey;
+    createDirectoryRecursively("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\InstalledSoftware");
+    createDirectoryRecursively("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate");
+    
+    for(int i = 0; i < hiveFiles.size(); i++){  // files coresponding to hives creation
+        string file = "C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate\\" + hiveFiles[i];
+
+        createFile(file);
     }
 
     for (int i = 0; i < keyList.size(); i++){
@@ -114,7 +132,7 @@ int main(){
                 + to_string(systemTime.wSecond);
             string writeContent = "lpcSubKeys:" + to_string(subKeysCount) 
                                                 + "\nlpcMaxSubKeyLen:" + to_string(maxSubKeyLen)
-                                                + "\nlpftLastWriteTime:" + timeData;
+                                                + "\nlpftLastWriteTime:" + timeData;                //writing data to each fille 
 
             if (keyList[i] == HKEY_LOCAL_MACHINE){
                 writeToFile("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate\\HKLM.txt", writeContent);
@@ -125,6 +143,10 @@ int main(){
             if (keyList[i] == HKEY_CURRENT_USER){
                 writeToFile("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate\\HKCU.txt", writeContent);
             }
+        }
+
+        else{
+            cerr << "Error " << " (" << GetLastError() << ")" << endl;
         }
 
     }
@@ -167,15 +189,70 @@ int main(){
 
    }while(FindNextFileA(hFind, &ffd) != 0);
     writeToFile("C:\\Facultate\\CSSO\\Laboratoare\\Week2\\Rezultate\\sumar.txt", writeContent);
-   FindClose(hFind);
+    FindClose(hFind);
 
-
-
-
-
-
+     value = RegOpenKeyExA(HKEY_CURRENT_USER, "SOFTWARE", 0, KEY_READ, &hkcuSoftware);
     
+    if (value == ERROR_SUCCESS) {
+        DWORD subKeyIndex = 0;
+        CHAR subKeyName[MAX_PATH];
+        DWORD subKeyNameSize = MAX_PATH;
+        
+        while (true){
+            result = RegEnumKeyExA(hkcuSoftware, subKeyIndex, subKeyName, &subKeyNameSize, NULL, NULL, NULL, NULL);
+
+            if(result == ERROR_SUCCESS){
+            
+                writeContent ="C:\\Facultate\\CSSO\\Laboratoare\\Week2\\InstalledSoftware\\";
+                writeContent.append(subKeyName);
+                createFile(writeContent);
+                filesCreatedCount++;
+                subKeyIndex++;
+                subKeyNameSize = MAX_PATH;
+            }
+            else if (result == ERROR_NO_MORE_ITEMS){
+                break;
+            }
+            else{
+                cerr << "Error enumerating subkeys: " << result << endl;
+                break;
+            }
+
+
+        }
+
+       RegCloseKey(hkcuSoftware);
+    }
     
+    else{
+        RegCloseKey(hkcuSoftware);
+        cerr << "Error opening key HKCU\\SOFTWARE " << result << endl;
+    }
+
+    createRegistryKey(HKEY_CURRENT_USER, "SOFTWARE\\CSSO");
+    createRegistryKey(HKEY_CURRENT_USER, "SOFTWARE\\CSSO\\Week2");
+
+    value = RegOpenKeyExA(HKEY_CURRENT_USER, "SOFTWARE\\CSSO\\Week2", 0, KEY_SET_VALUE, &hKey);
+
+    if(value == ERROR_SUCCESS){
+
+        writeContent = "C:\\Facultate\\CSSO\\Laboratoare\\Week2\\InstalledSoftware";
+        value = RegSetValueExA(hKey, "StringValue", 0, REG_SZ, (const BYTE*)writeContent.c_str(), writeContent.size() + 1);
+
+        if(value != ERROR_SUCCESS){
+           cerr << "Error setting REG_SZ value: StringValue (Error code: " << value << ")";
+        }
+
+        value = RegSetValueExA(hKey, "DwordValue", 0, REG_DWORD, (const BYTE*)&filesCreatedCount, sizeof(DWORD));
+
+        if(value != ERROR_SUCCESS){
+            cerr << "Error setting REG_DWORD value: DwordValue (Error code: " << value << ")";
+        }
+
+    }
+
+    RegCloseKey(hKey);
+
 
 
     return 0;
