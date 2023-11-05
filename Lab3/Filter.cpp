@@ -122,6 +122,10 @@ int main(){
     CloseHandle(hThread2);
     CloseHandle(hThread3);
 
+    delete param1;
+    delete param2;
+    delete param3;
+
     cout << "Filter.exe: I'm taking a 30 min nap now.... Drifting off....\n";
     cout << "-ZZZZZZ-   -ZZZZZZ-   -ZZZZZZ- \n";
     cout << "      -Z         -Z         -Z \n";

@@ -44,6 +44,7 @@ int main(){
                 return (-1);
             }
             cout << "Killer.exe: Killing Filter.exe NOW \n";
+            Sleep(1000 * 3);
             CloseHandle(hProcess);
             break;
 

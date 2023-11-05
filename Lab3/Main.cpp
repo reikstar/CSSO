@@ -109,6 +109,11 @@ int main(){
 
         return (-1);
     }
+    Sleep(10);
+    for(int i = 0; i < 3; i++){
+        cout<< 3 - i << "..." << endl;
+        Sleep(1000);
+    }
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
