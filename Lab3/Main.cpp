@@ -87,7 +87,7 @@ int main(){
         return (-1);
     }
 
-    Sleep(50);
+    Sleep(150);
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
