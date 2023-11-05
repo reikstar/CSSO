@@ -60,7 +60,7 @@ int main(){
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-    pMap = (LPSTR) MapViewOfFile(hFileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 256);
+    pMap = MapViewOfFile(hFileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 256);
     if(!pMap){
         cerr << "MapViewOfFile error " << GetLastError();
         CloseHandle(hFileMapping);
