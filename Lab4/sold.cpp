@@ -11,8 +11,6 @@ bool dayCompare(const string &file1, const string &file2){
     return day1 < day2;
 }
 
-
-
 int main(){
     HANDLE hMapShelves, hMapValability, hMapPrices, hFile;
     LPVOID pMapShelves, pMapValability, pMapPrices;
@@ -85,10 +83,8 @@ int main(){
      }
     pricesArray = static_cast<DWORD*>(pMapPrices);
 
-    
 
-
-    hFile = FindFirstFile("C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\*", &ffd);  //going through the files
+    hFile = FindFirstFile("C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\*", &ffd);  //going through the files
     if(hFile == INVALID_HANDLE_VALUE){
         cerr << "Could not find first file. Error " << GetLastError();
         CloseHandle(hMapShelves);
@@ -111,9 +107,10 @@ int main(){
 
     sort(filenames.begin(), filenames.end(), dayCompare);  //FindNextFile would not give them in a sorted order, so we have to do it manually.
                                                            //Custom comparator to order by the day of the month.
-                                        
+
+    int old_value = 0;                                    
     for(auto & file : filenames){
-       string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\" + file;
+       string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\" + file;
        string fileContent;
        try
        {
@@ -134,24 +131,17 @@ int main(){
        string line;
 
        while(getline(iss, line)){
-            istringstream lineStream(line);
-            string number;
-
-            while(getline(lineStream, number, ',')){
-                numbers.push_back(stoi(number));
-            }
+            string number = line;
+            numbers.push_back(stoi(number));
+            
        }
 
-       for(int i = 0; i < numbers.size(); i += 4){
-            
-            id_produs = numbers[i];         
-            expires_in = numbers[i + 1];
-            shelve_id = numbers[i + 2];
-            product_price = numbers[i + 3];
-            
+       for(int i = 0; i < numbers.size(); i ++){
 
-            if(shelvesArray[shelve_id] != 0xFFFFFFFF){
-                hFile = CreateFile(
+            shelve_id = numbers[i];
+            
+            if(shelvesArray[shelve_id] == 0xFFFFFFFF){
+                 hFile = CreateFile(
                         "C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\errors.txt",
                         GENERIC_READ | GENERIC_WRITE,
                         0,
@@ -171,42 +161,41 @@ int main(){
                 }
                 CloseHandle(hFile);
                 
-                string error = "S-a incercat adaugarea produsului " + to_string(id_produs) + " pe raftul "
-                + to_string(shelve_id) + " care este deja ocupat de " 
-                + to_string(shelvesArray[shelve_id]) + "\n"; 
-
+                string error = "S-a incercat vanzarea produsului de pe raftul " + to_string(shelve_id) + " ce nu contine nimic.\n";
+                 
                 appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\errors.txt", error.c_str());
-
-
             }
+
             else{
-                
-                shelvesArray[shelve_id] = id_produs;
-                valabilityArray[id_produs] = expires_in;        //writing in memory map
-                pricesArray[id_produs] = product_price;
-                string logsLine = "Am adaugat pe raftul " + to_string(shelve_id) + " produsul "  
-                + to_string(id_produs) + " ce are o valabilitate de " + to_string(expires_in) 
-                + " zile si un pret de " + to_string(product_price) + "\n";
-                appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\logs.txt", logsLine.c_str());
+                if(valabilityArray[id_produs] != 0){
+                    id_produs = shelvesArray[shelve_id];
+                    product_price = pricesArray[id_produs];
+                    expires_in = valabilityArray[id_produs];
+
+                    int new_value = old_value + product_price;
+
+                    string logsLine = "S-a vandut produsul " + to_string(id_produs) + " de pe raftul "  
+                        + to_string(shelve_id) + " cu " + to_string(expires_in) 
+                        + " zile inainte de a fi donat cu pretul de " + to_string(product_price) + "\n";
+                    appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\logs.txt", logsLine);
+                    WriteToFile ("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\sold.txt", to_string(new_value));
+
+                    old_value = new_value;
+
+                    valabilityArray[id_produs] = 0xFFFFFFFF;
+                    pricesArray[id_produs] = 0xFFFFFFFF;
+                    shelvesArray[shelve_id] = 0xFFFFFFFF;
+                }
             }
-
+            
        }
-
-        //should wait for the other processes to be done before next file/day
-    break;
-}
-    
-    
-    
-    
-
+       break;
+    }
     CloseHandle(hMapShelves);
     CloseHandle(hMapValability);
     CloseHandle(hMapPrices);
     UnmapViewOfFile(pMapShelves);
     UnmapViewOfFile(pMapValability);
     UnmapViewOfFile(pMapPrices);
-
     return 0;
-
 }
