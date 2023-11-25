@@ -46,7 +46,35 @@ void appendToFile(const string &path, const string &buffer){
             NULL
         );
         if(handle == INVALID_HANDLE_VALUE){
-            cout << "Unable to open file " << path << endl;
+            cout << "Unable to open file " << path << " Error " << GetLastError() << endl;
+            return;
+        }
+
+        DWORD dwBytesToWrite = (DWORD)buffer.size();
+        DWORD dwBytesWritten = 0;
+
+        bool successfulWrite = WriteFile(handle, buffer.c_str(), dwBytesToWrite, &dwBytesWritten, NULL) == 1;
+        if(!successfulWrite){
+            cout << "Error writing to the file" << " (" << GetLastError() << ")" << endl;
+    
+        }
+        CloseHandle(handle);
+
+}
+
+void WriteToFile(const string &path, const string &buffer){
+
+        HANDLE handle = CreateFileA(
+            path.c_str(),
+            GENERIC_WRITE,
+            0,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            NULL
+        );
+        if(handle == INVALID_HANDLE_VALUE){
+            cout << "Unable to open file " << path << " Error " << GetLastError() << endl;
             return;
         }
 
@@ -79,3 +107,63 @@ void createFile(const string &path, DWORD DesiredAccess){
    CloseHandle(hFile);        
     
     }
+
+HANDLE createMapping(const string &name, DWORD DesiredAccess, DWORD highOrderBytes, DWORD lowOrderBytes){
+    HANDLE hFileMapping = CreateFileMapping(
+                          INVALID_HANDLE_VALUE,
+                          NULL,
+                          DesiredAccess,
+                          highOrderBytes,
+                          lowOrderBytes,
+                          name.c_str());
+    if(hFileMapping == NULL){
+       throw runtime_error("Could not create file mapping object. Error " + GetLastError());
+        
+    }
+
+    return hFileMapping;
+    
+}
+
+string fileToString(const string &path, int MAX_BYTES_TO_READ){
+     HANDLE hFile;
+     hFile = CreateFile(
+                path.c_str(),
+                GENERIC_READ,
+                FILE_SHARE_READ,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL);
+
+        if(hFile == INVALID_HANDLE_VALUE){
+            throw runtime_error("Error opening file: " + path + " (" + to_string(GetLastError()) + ")\n"); 
+       
+        }
+
+        char buffer[MAX_BYTES_TO_READ];
+        memset(buffer, '\0', MAX_BYTES_TO_READ);
+        
+        DWORD bytesRead;
+        bool successfulRead = ReadFile(hFile, buffer, MAX_BYTES_TO_READ-1, &bytesRead, NULL) != 0;
+
+        if(!successfulRead){
+            throw runtime_error("Error reading file: " + path + " (" + to_string(GetLastError()) + ")\n"); 
+        }
+    
+        CloseHandle(hFile);
+        if(bytesRead > 0 && bytesRead <= MAX_BYTES_TO_READ-1){
+            buffer[bytesRead] = '\0';
+
+        }
+        else{
+            if(bytesRead > MAX_BYTES_TO_READ-1){
+                buffer[bytesRead] = '\0';
+            }
+            
+        }
+
+          string fileContent(buffer, bytesRead);
+          
+          return fileContent;
+}
