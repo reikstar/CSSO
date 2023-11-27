@@ -9,7 +9,7 @@ int main(){
     STARTUPINFO si[3];
     PROCESS_INFORMATION pi[3];
     LPCSTR programs[3] = {"C:\\Users\\Asihma\\CSSO\\Lab4\\deposit.exe", "C:\\Users\\Asihma\\CSSO\\Lab4\\donation.exe", "C:\\Users\\Asihma\\CSSO\\Lab4\\sold.exe"};
-    HANDLE hMapFileShelves, hMapFileValability, hMapFilePrices,hFile, hEventDepoDone, hEventSoldDone, hEventDonationDone;
+    HANDLE hMapFileShelves, hMapFileValability, hMapFilePrices,hFile, hEventDepoDone, hEventSoldDone, hEventDonationDone, hMutex;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
     DWORD* valabilityArray;
@@ -31,6 +31,10 @@ int main(){
     hEventDepoDone = CreateEvent(NULL, TRUE, FALSE, "DepoDone");
     hEventSoldDone = CreateEvent(NULL, TRUE, FALSE, "SoldDone");
     hEventDonationDone = CreateEvent(NULL, TRUE, FALSE, "DonationDone");
+    hMutex = CreateMutex(
+        NULL,
+        FALSE,
+        "mutex");
     
     if(hEventDepoDone == NULL || hEventSoldDone == NULL || hEventDonationDone == NULL){
         CloseHandle(hEventDepoDone);
@@ -81,6 +85,8 @@ int main(){
         valabilityArray[i] = 0xFFFFFFFF;
     }
 
+    Sleep(100);
+
     ZeroMemory(si, sizeof(si));
     for (int i = 0; i < 3; i++) {
         si[i].cb = sizeof(STARTUPINFO);
@@ -115,7 +121,7 @@ int main(){
         CloseHandle(pi[i].hThread);
     }
 
-
+    CloseHandle(hMutex);
     CloseHandle(hEventDepoDone);
     CloseHandle(hEventSoldDone);
     CloseHandle(hEventDonationDone);

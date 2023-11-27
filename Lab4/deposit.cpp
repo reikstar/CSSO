@@ -17,7 +17,7 @@ bool dayCompare(const string &file1, const string &file2){
 
 int main(){
 
-    cout << "deposit started\n";
+    std::cout << "deposit started\n";
     HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex, hEventThis, hEventNext;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
@@ -36,8 +36,8 @@ int main(){
         return (-1);
     }
 
-    hMutex = CreateMutex(
-        NULL,
+    hMutex = OpenMutex(
+        SYNCHRONIZE,
         FALSE,
         "mutex");
 
@@ -135,13 +135,12 @@ int main(){
 
     sort(filenames.begin(), filenames.end(), dayCompare);  //FindNextFile would not give them in a sorted order, so we have to do it manually.
                                                            //Custom comparator to order by the day of the month.
-                                        
+    int x = 1;                                 
     for(auto & file : filenames){
 
       
-      WaitForSingleObject(hEventThis, INFINITE); // The order of them in a ring would be deposit-sold-donation. 
-                                                  // First iteration would be only deposit-donation since sold has -1 day
-       cout << "day done from deposit\n";                                 
+      WaitForSingleObject(hEventThis, INFINITE); // The order of them in a ring would be deposit-donation-sold. 
+                                                  // First iteration would be only deposit-donation since sold has -1 day                               
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\" + file;
        string fileContent;
        try
@@ -170,11 +169,13 @@ int main(){
                 numbers.push_back(stoi(number));
             }
        }
-       if(WaitForSingleObject(hMutex, INFINITE) == WAIT_ABANDONED){
-         cout << "Abandoned mutex" << endl;
-         continue;
-       }
-       for(int i = 0; i < numbers.size(); i += 4){
+       DWORD dwWaitResponse = WaitForSingleObject(hMutex, INFINITE);
+       
+       switch (dwWaitResponse){
+
+        case WAIT_OBJECT_0:
+            std::cout << "Deposit got ownership of mutex at day " << x  << endl;
+            for(int i = 0; i < numbers.size(); i += 4){
             
             id_produs = numbers[i];         
             expires_in = numbers[i + 1];
@@ -223,16 +224,37 @@ int main(){
                 appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\logs.txt", logsLine.c_str());
             }
 
-       }
+            }
+            
+            
+            if(ReleaseMutex(hMutex)){
+                std::cout << "deposit released mutex on day " << x << endl;
+                
+            }
+            else{
+                cerr << "Release mutex error " << GetLastError();
+                return (-1);
+            }
+            
+            break;
 
-       ReleaseMutex(hMutex);
-       SetEvent(hEventNext);       
-}
+        case WAIT_ABANDONED:
+            cerr << "mutex abandoned";
+            return (-1); 
+            
+              
+        }
+
+    std::cout << "day" << x << "done from deposit\n";
+    x++;
+    Sleep(100);
+    SetEvent(hEventNext);   
+    }
+       
     
     
     
     CloseHandle(hEventNext);
-    CloseHandle(hMutex);
     CloseHandle(hMutex);
     CloseHandle(hMapShelves);
     CloseHandle(hMapValability);
