@@ -34,7 +34,10 @@ int main(){
         if(pMap) {
             memset(pMap, 0, 256);
             UnmapViewOfFile(pMap);
-        }
+      
+      
+
+      
 
     if( !CreateProcess( NULL,
         collectCmd,
@@ -59,6 +62,7 @@ int main(){
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+        }
 
     pMap = MapViewOfFile(hFileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 256);
     if(!pMap){

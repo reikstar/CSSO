@@ -3,8 +3,13 @@
 #define fileSize (sizeof(DWORD) * 10000)
 
 
+
+
 int main(){
-    HANDLE hMapFileShelves, hMapFileValability, hMapFilePrices,hFile;
+    STARTUPINFO si[3];
+    PROCESS_INFORMATION pi[3];
+    LPCSTR programs[3] = {"C:\\Users\\Asihma\\CSSO\\Lab4\\deposit.exe", "C:\\Users\\Asihma\\CSSO\\Lab4\\donation.exe", "C:\\Users\\Asihma\\CSSO\\Lab4\\sold.exe"};
+    HANDLE hMapFileShelves, hMapFileValability, hMapFilePrices,hFile, hEventDepoDone, hEventSoldDone, hEventDonationDone;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
     DWORD* valabilityArray;
@@ -23,6 +28,20 @@ int main(){
     hMapFileShelves = createMapping("MarketShelves", PAGE_READWRITE, 0, fileSize);
     hMapFileValability = createMapping("MarketValability", PAGE_READWRITE, 0 , fileSize);
     hMapFilePrices = createMapping("ProductPrices", PAGE_READWRITE, 0 , fileSize);
+    hEventDepoDone = CreateEvent(NULL, TRUE, FALSE, "DepoDone");
+    hEventSoldDone = CreateEvent(NULL, TRUE, FALSE, "SoldDone");
+    hEventDonationDone = CreateEvent(NULL, TRUE, FALSE, "DonationDone");
+    CloseHandle(hEventDepoDone);
+
+    if(hEventDepoDone == NULL || hEventSoldDone == NULL || hEventDonationDone == NULL){
+        CloseHandle(hEventDepoDone);
+        CloseHandle(hEventSoldDone);
+        CloseHandle(hEventDonationDone);
+        cerr << "CreateEvent error " << GetLastError();
+        return (-1);
+    }
+    
+    
 
     pMapShelves = MapViewOfFile(hMapFileShelves, FILE_MAP_ALL_ACCESS, 0, 0, 0);
     if(pMapShelves == NULL){
@@ -30,6 +49,7 @@ int main(){
         CloseHandle(hMapFileShelves);
         CloseHandle(hMapFileValability);
         CloseHandle(hMapFilePrices);
+        
      }
     shelvesArray = static_cast<DWORD*>(pMapShelves);
 
@@ -40,6 +60,7 @@ int main(){
         CloseHandle(hMapFileValability);
         CloseHandle(hMapFilePrices);
         UnmapViewOfFile(pMapShelves);
+        
      }
     valabilityArray = static_cast<DWORD*>(pMapValability);
 
@@ -61,10 +82,44 @@ int main(){
         valabilityArray[i] = 0xFFFFFFFF;
     }
 
-    Sleep(100 * 1000);
+    ZeroMemory(si, sizeof(si));
+    for (int i = 0; i < 3; i++) {
+        si[i].cb = sizeof(STARTUPINFO);
+    }
+
+    
+    for (int i = 0; i < 3; i++) {
+        if (!CreateProcess(
+                programs[i],   
+                NULL,          
+                NULL,          
+                NULL,          
+                FALSE,         
+                0,             
+                NULL,          
+                NULL,           
+                &si[i],        
+                &pi[i]))       
+        {
+            cerr << "CreateProcess failed for " << programs[i] << " with error " << GetLastError() << endl;
+        }
+    }
+
+    
+    HANDLE hProcesses[3] = {pi[0].hProcess, pi[1].hProcess, pi[2].hProcess};
+    SetEvent(hEventSoldDone);
+    WaitForMultipleObjects(3, hProcesses, TRUE, INFINITE);
+
+    
+    for (int i = 0; i < 3; i++) {
+        CloseHandle(pi[i].hProcess);
+        CloseHandle(pi[i].hThread);
+    }
 
 
-
+    CloseHandle(hEventDepoDone);
+    CloseHandle(hEventSoldDone);
+    CloseHandle(hEventDonationDone);
     CloseHandle(hMapFileShelves);
     CloseHandle(hMapFileValability);
     CloseHandle(hMapFilePrices);
@@ -72,7 +127,7 @@ int main(){
     UnmapViewOfFile(pMapValability);
     UnmapViewOfFile(pMapPrices);
 
-
+    return 0;
 
 
 }

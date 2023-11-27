@@ -12,7 +12,7 @@ bool dayCompare(const string &file1, const string &file2){
 }
 
 int main(){
-    HANDLE hMapShelves, hMapValability, hMapPrices, hFile;
+    HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
     DWORD* valabilityArray;
@@ -21,7 +21,25 @@ int main(){
     vector<string> filenames;
     vector<int> numbers;
     int id_produs, expires_in, shelve_id, product_price;
-    
+
+    HANDLE hEventThis = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "DonationDone");
+    HANDLE hEventNext = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "SoldDone");
+
+    if (!hEventThis || !hEventNext) {
+        cerr << "Failed to open events from sold.exe. Error "  << GetLastError();
+        return (-1);
+    }
+
+    hMutex = CreateMutex(
+        NULL,
+        FALSE,
+        "mutex");
+
+    if(hMutex == NULL){
+        cerr << "CreateMutex error " << GetLastError();
+        return (-1);
+    }
+
     // open all file mappings.
     hMapShelves = OpenFileMapping(
                     FILE_MAP_ALL_ACCESS,
@@ -110,6 +128,8 @@ int main(){
 
     int old_value = 0;                                    
     for(auto & file : filenames){
+
+       WaitForSingleObject(hEventThis, INFINITE);
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\" + file;
        string fileContent;
        try
@@ -135,6 +155,11 @@ int main(){
             numbers.push_back(stoi(number));
             
        }
+
+       if(WaitForSingleObject(hMutex, INFINITE) == WAIT_ABANDONED){
+         cout << "Abandoned mutex" << endl;
+         continue;
+       } 
 
        for(int i = 0; i < numbers.size(); i ++){
 
@@ -189,7 +214,8 @@ int main(){
             }
             
        }
-       break;
+       SetEvent(hEventNext);
+       ReleaseMutex(hMutex);
     }
     CloseHandle(hMapShelves);
     CloseHandle(hMapValability);

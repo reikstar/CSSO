@@ -2,7 +2,9 @@
 #include "algorithm"
 #include <sstream>
 
+
 const int MAX_BYTES_TO_READ = 6144; // A file has maximum 4kb, so 6144 bytes would be enough
+
 
 bool dayCompare(const string &file1, const string &file2){
     int day1, day2;
@@ -14,7 +16,7 @@ bool dayCompare(const string &file1, const string &file2){
 
 
 int main(){
-    HANDLE hMapShelves, hMapValability, hMapPrices, hFile;
+    HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex, hEventThis, hEventNext;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
     DWORD* valabilityArray;
@@ -23,7 +25,27 @@ int main(){
     vector<string> filenames;
     vector<int> numbers;
     int id_produs, expires_in, shelve_id, product_price;
-    
+
+    hEventThis = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "SoldDone");
+    hEventNext = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "DepoDone");
+
+    if (!hEventThis || !hEventNext) {
+        cerr << "Failed to open events from deposit.exe. Error  "  << GetLastError();
+        return (-1);
+    }
+
+    hMutex = CreateMutex(
+        NULL,
+        FALSE,
+        "mutex");
+
+    if(hMutex == NULL){
+        cerr << "CreateMutex error " << GetLastError();
+        return (-1);
+    }
+
+
+
     // open all file mappings.
     hMapShelves = OpenFileMapping(
                     FILE_MAP_ALL_ACCESS,
@@ -113,6 +135,10 @@ int main(){
                                                            //Custom comparator to order by the day of the month.
                                         
     for(auto & file : filenames){
+
+      WaitForSingleObject(hEventThis, INFINITE); // The order of them in a ring would be deposit-sold-donation. 
+                                                // First iteration would be only deposit-donation since sold has -1 day 
+
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\" + file;
        string fileContent;
        try
@@ -141,7 +167,10 @@ int main(){
                 numbers.push_back(stoi(number));
             }
        }
-
+       if(WaitForSingleObject(hMutex, INFINITE) == WAIT_ABANDONED){
+         cout << "Abandoned mutex" << endl;
+         continue;
+       }
        for(int i = 0; i < numbers.size(); i += 4){
             
             id_produs = numbers[i];         
@@ -162,6 +191,7 @@ int main(){
                 if(hFile == INVALID_HANDLE_VALUE){
                     cerr << "Could not create/open file. Error " << GetLastError();
                     return (-1);
+                    CloseHandle(hMutex);
                     CloseHandle(hMapShelves);
                     CloseHandle(hMapValability);
                     CloseHandle(hMapPrices);
@@ -192,14 +222,15 @@ int main(){
 
        }
 
-        //should wait for the other processes to be done before next file/day
-    break;
+       ReleaseMutex(hMutex);
+       SetEvent(hEventNext);       
 }
     
     
     
-    
-
+    CloseHandle(hEventNext);
+    CloseHandle(hMutex);
+    CloseHandle(hMutex);
     CloseHandle(hMapShelves);
     CloseHandle(hMapValability);
     CloseHandle(hMapPrices);

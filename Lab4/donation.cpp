@@ -1,13 +1,30 @@
 #include "utils.h"
 
 int main(){
-    HANDLE hMapShelves, hMapValability, hMapPrices, hFile;
+    HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
     DWORD* valabilityArray;
     DWORD* pricesArray;
 
 
+    HANDLE hEventThis = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "DepoDone");
+    HANDLE hEventNext = OpenEvent(EVENT_MODIFY_STATE | SYNCHRONIZE, FALSE, "DonationDone");
+
+    if (!hEventThis || !hEventNext) {
+        cerr << "Failed to open events in donation.exe. Error "  << GetLastError();
+        return (-1);
+    }
+
+    hMutex = CreateMutex(
+        NULL,
+        FALSE,
+        "mutex");
+
+    if(hMutex == NULL){
+        cerr << "CreateMutex error " << GetLastError();
+        return (-1);
+    }
     // open all file mappings.
     hMapShelves = OpenFileMapping(
                     FILE_MAP_ALL_ACCESS,
@@ -71,7 +88,12 @@ int main(){
 
     int old_value = 0;
     for (int i = 1; i <= 29; i++){  //since we have 29 days, we are going to loop 29 times for each day.
+        WaitForSingleObject(hEventThis, INFINITE);
 
+        if(WaitForSingleObject(hMutex, INFINITE) == WAIT_ABANDONED){
+         cout << "Abandoned mutex" << endl;
+         continue;
+       }
         for (size_t id_produs = 0; id_produs < 10000; id_produs ++){
             if(valabilityArray[id_produs] == 0){
                 int new_value = old_value + pricesArray[id_produs];
@@ -96,8 +118,17 @@ int main(){
                 valabilityArray[id_produs] --;
             }
         }
-        break;
+        ReleaseMutex(hMutex);
+        SetEvent(hEventNext);
+        
     }
-    
 
+    CloseHandle(hMapShelves);
+    CloseHandle(hMapValability);
+    CloseHandle(hMapPrices);
+    UnmapViewOfFile(pMapShelves);
+    UnmapViewOfFile(pMapValability);
+    UnmapViewOfFile(pMapPrices);
+
+    return 0;
 }
