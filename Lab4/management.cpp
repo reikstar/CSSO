@@ -31,8 +31,7 @@ int main(){
     hEventDepoDone = CreateEvent(NULL, TRUE, FALSE, "DepoDone");
     hEventSoldDone = CreateEvent(NULL, TRUE, FALSE, "SoldDone");
     hEventDonationDone = CreateEvent(NULL, TRUE, FALSE, "DonationDone");
-    CloseHandle(hEventDepoDone);
-
+    
     if(hEventDepoDone == NULL || hEventSoldDone == NULL || hEventDonationDone == NULL){
         CloseHandle(hEventDepoDone);
         CloseHandle(hEventSoldDone);

@@ -12,6 +12,8 @@ bool dayCompare(const string &file1, const string &file2){
 }
 
 int main(){
+
+    cout << "sold started\n";
     HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
@@ -128,8 +130,9 @@ int main(){
 
     int old_value = 0;                                    
     for(auto & file : filenames){
-
+        
        WaitForSingleObject(hEventThis, INFINITE);
+       cout << "day done from sold\n";
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\" + file;
        string fileContent;
        try

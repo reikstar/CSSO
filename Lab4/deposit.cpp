@@ -16,6 +16,8 @@ bool dayCompare(const string &file1, const string &file2){
 
 
 int main(){
+
+    cout << "deposit started\n";
     HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex, hEventThis, hEventNext;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
@@ -136,9 +138,10 @@ int main(){
                                         
     for(auto & file : filenames){
 
+      
       WaitForSingleObject(hEventThis, INFINITE); // The order of them in a ring would be deposit-sold-donation. 
-                                                // First iteration would be only deposit-donation since sold has -1 day 
-
+                                                  // First iteration would be only deposit-donation since sold has -1 day
+       cout << "day done from deposit\n";                                 
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\" + file;
        string fileContent;
        try

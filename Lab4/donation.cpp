@@ -1,6 +1,8 @@
 #include "utils.h"
 
 int main(){
+
+    cout << "donation started\n";
     HANDLE hMapShelves, hMapValability, hMapPrices, hFile, hMutex;
     LPVOID pMapShelves, pMapValability, pMapPrices;
     DWORD* shelvesArray;
@@ -89,7 +91,7 @@ int main(){
     int old_value = 0;
     for (int i = 1; i <= 29; i++){  //since we have 29 days, we are going to loop 29 times for each day.
         WaitForSingleObject(hEventThis, INFINITE);
-
+        cout << "day done from donation\n";
         if(WaitForSingleObject(hMutex, INFINITE) == WAIT_ABANDONED){
          cout << "Abandoned mutex" << endl;
          continue;
