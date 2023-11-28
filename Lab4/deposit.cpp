@@ -112,7 +112,7 @@ int main(){
     string path = fileToString("C:\\Users\\Asihma\\CSSO\\Lab4\\output_deposit.txt", 1024);
 
 
-    hFile = FindFirstFile("C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\*", &ffd);  //going through the files
+    hFile = FindFirstFile((path + "\\*").c_str(), &ffd);  //going through the files
     if(hFile == INVALID_HANDLE_VALUE){
         cerr << "Could not find first file. Error " << GetLastError();
         CloseHandle(hMapShelves);
@@ -142,11 +142,11 @@ int main(){
 
       WaitForSingleObject(hEventThis, INFINITE); // The order of them in a ring would be deposit-donation-sold. 
                                                   // First iteration would be only deposit-donation since sold has -1 day                               
-       string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\" + file;
+       string pathTXT = path + "\\" + file;
        string fileContent;
        try
        {
-        fileContent = fileToString(path, MAX_BYTES_TO_READ);
+        fileContent = fileToString(pathTXT, MAX_BYTES_TO_READ);
        }
        catch(exception& e)
        {

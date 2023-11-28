@@ -103,8 +103,8 @@ int main(){
      }
     pricesArray = static_cast<DWORD*>(pMapPrices);
 
-
-    hFile = FindFirstFile("C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\*", &ffd);  //going through the files
+    string path = fileToString("C:\\Users\\Asihma\\CSSO\\Lab4\\output_sold.txt", 1024);
+    hFile = FindFirstFile((path + "\\*").c_str(), &ffd);  //going through the files
     if(hFile == INVALID_HANDLE_VALUE){
         cerr << "Could not find first file. Error " << GetLastError();
         CloseHandle(hMapShelves);
@@ -133,11 +133,11 @@ int main(){
     for(auto & file : filenames){
        bool NoErrorForTheDay = TRUE;
        WaitForSingleObject(hEventThis, INFINITE);
-       string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\" + file;
+       string pathTXT = path + "\\" + file;
        string fileContent;
        try
        {
-        fileContent = fileToString(path, MAX_BYTES_TO_READ);
+        fileContent = fileToString(pathTXT, MAX_BYTES_TO_READ);
        }
        catch(exception& e)
        {
