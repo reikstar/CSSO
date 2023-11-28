@@ -131,7 +131,7 @@ int main(){
     int old_value = 0;             
     int x = 2;                       
     for(auto & file : filenames){
-        
+       bool NoErrorForTheDay = TRUE;
        WaitForSingleObject(hEventThis, INFINITE);
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\sold\\" + file;
        string fileContent;
@@ -189,7 +189,11 @@ int main(){
                     UnmapViewOfFile(pMapPrices);
                 }
                 CloseHandle(hFile);
-                
+                if(NoErrorForTheDay){
+                    string error = "Errors from sold day " + to_string(x) + "\n";
+                    appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\errors.txt", error.c_str());
+                    NoErrorForTheDay = FALSE;
+                }
                 string error = "S-a incercat vanzarea produsului de pe raftul " + to_string(shelve_id) + " ce nu contine nimic.\n";
                  
                 appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\errors.txt", error.c_str());
@@ -236,6 +240,7 @@ int main(){
 
         cout << "day" << x << "done from sold\n";
         x++;
+        numbers.clear();
         Sleep(100);
         SetEvent(hEventNext);   
        

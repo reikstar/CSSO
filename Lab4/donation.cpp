@@ -90,6 +90,7 @@ int main(){
 
     int old_value = 0;
     for (int i = 1; i <= 29; i++){  //since we have 29 days, we are going to loop 29 times for each day.
+        
         WaitForSingleObject(hEventThis, INFINITE);
         
         DWORD dwWaitResponse = WaitForSingleObject(hMutex, INFINITE);
@@ -125,7 +126,7 @@ int main(){
             
             if(ReleaseMutex(hMutex)){
 
-                std::cout << "deposit released mutex on day " << i << endl;
+                std::cout << "donation released mutex on day " << i << endl;
             }
 
             else{

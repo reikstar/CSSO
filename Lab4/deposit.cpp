@@ -109,7 +109,7 @@ int main(){
      }
     pricesArray = static_cast<DWORD*>(pMapPrices);
 
-    
+    string path = fileToString("C:\\Users\\Asihma\\CSSO\\Lab4\\output_deposit.txt", 1024);
 
 
     hFile = FindFirstFile("C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\*", &ffd);  //going through the files
@@ -137,8 +137,9 @@ int main(){
                                                            //Custom comparator to order by the day of the month.
     int x = 1;                                 
     for(auto & file : filenames){
+        
+      bool NoErrorForTheDay = TRUE;
 
-      
       WaitForSingleObject(hEventThis, INFINITE); // The order of them in a ring would be deposit-donation-sold. 
                                                   // First iteration would be only deposit-donation since sold has -1 day                               
        string path = "C:\\Users\\Asihma\\CSSO\\Lab4\\deposit\\" + file;
@@ -204,7 +205,11 @@ int main(){
                     UnmapViewOfFile(pMapPrices);
                 }
                 CloseHandle(hFile);
-                
+                if(NoErrorForTheDay){
+                    string error = "Errors from deposit day " + to_string(x) + "\n";
+                    appendToFile("C:\\Facultate\\CSSO\\Week4\\Reports\\Summary\\errors.txt", error.c_str());
+                   NoErrorForTheDay = FALSE;
+                }
                 string error = "S-a incercat adaugarea produsului " + to_string(id_produs) + " pe raftul "
                 + to_string(shelve_id) + " care este deja ocupat de " 
                 + to_string(shelvesArray[shelve_id]) + "\n"; 
@@ -248,6 +253,7 @@ int main(){
     std::cout << "day" << x << "done from deposit\n";
     x++;
     Sleep(100);
+    numbers.clear();
     SetEvent(hEventNext);   
     }
        
