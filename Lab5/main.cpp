@@ -2,7 +2,7 @@
 #include "utils.h"
 #include <wininet.h>
 #include <sstream>
-#define NR_MATRICOL "310910401RSL211193"
+#define NR_MATRICOL "Jack Sparrow"
 #define MAX_BYTES_TO_READ 0x4000
 
 int main(){
@@ -318,6 +318,8 @@ int main(){
                                 "POST",
                                 "/endhomework", NULL, NULL, NULL, 0, 0);
     
+    
+    
     if(hRequest == NULL){
 
         error = GetLastError();
@@ -330,6 +332,7 @@ int main(){
         return (-1);
             
     }
+
 
     string header = "Content-Type: application/x-www-form-urlencoded\r\n";
 
@@ -350,6 +353,12 @@ int main(){
 
         }
         return (-1);
+    }
+
+    for(auto handle : HandleVector){
+
+        InternetCloseHandle(handle);
+
     }
 
 
