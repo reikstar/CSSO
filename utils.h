@@ -3,9 +3,69 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <wininet.h>
+
 
 using namespace std;
 
+
+string HTTP_GET_Response_ToString (const string &url, HINTERNET session, size_t MAX_BYTES_TO_READ){
+
+    DWORD error;
+    vector <HINTERNET> HandleVector;
+    char buffer[MAX_BYTES_TO_READ];
+
+    HandleVector.push_back(session);
+
+    HINTERNET hOpenUrl = InternetOpenUrl(session, 
+                                         url.c_str(), NULL, 0, 
+                                         INTERNET_FLAG_RELOAD, 0);
+
+        if(hOpenUrl == NULL){
+            error = GetLastError();
+            cerr << "InternetOpenUrl error " << error;
+
+            for(int i = HandleVector.size() - 1; i >= 0; i --){
+
+                InternetCloseHandle(HandleVector[i]);
+            }
+            throw runtime_error("InternetOpenUrl error " + to_string(error));
+        }
+
+        HandleVector.push_back(hOpenUrl);
+
+        memset(buffer,'\0', MAX_BYTES_TO_READ);
+
+        DWORD BYTES_READ = 0;
+
+        bool successfulRead = InternetReadFile(hOpenUrl, 
+                                    buffer, 
+                                    MAX_BYTES_TO_READ, 
+                                    &BYTES_READ) == TRUE;
+
+        if(!successfulRead){
+            
+            error = GetLastError();
+                
+            for(int i = HandleVector.size() - 1; i >= 0; i --){
+
+                InternetCloseHandle(HandleVector[i]);
+
+            }
+            throw runtime_error("InternetReadFile error " + to_string(error));
+        }
+
+        if(BYTES_READ > 0){
+
+            buffer[BYTES_READ] = '\0';   
+        }
+
+        string requestContent(buffer, BYTES_READ);
+
+        InternetCloseHandle(hOpenUrl);
+
+        return requestContent;
+}
 
 void createDirectoryRecursively(const string &directory){  
      const string separators("\\");
