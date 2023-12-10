@@ -2,7 +2,6 @@
 #include "utils.h"
 #include <wininet.h>
 #include <sstream>
-#define NR_MATRICOL "Jack Sparrow"
 #define MAX_BYTES_TO_READ 0x4000
 
 int main(){
@@ -10,14 +9,17 @@ int main(){
     HINTERNET hInternetOpen, hOpenUrl, hRequest, hConnect;
     HANDLE hFile;
     vector <HINTERNET> HandleVector;
-    string serverUrl = "http://cssohw.herokuapp.com/assignhomework/" + string(NR_MATRICOL), method, lastGETResponse;
     PCTSTR acceptTypes[] = {"text/*", NULL};
     char buffer[MAX_BYTES_TO_READ];
     DWORD BYTES_READ = 0, error;
     int GET_COUNT = 0, POST_COUNT = 0, EX2_REQUESTS_COUNT = 0;
     ULONGLONG totalFilesSize = 0;
 
-    hInternetOpen = InternetOpen(NR_MATRICOL,
+    string path_url = fileToString("C:\\Users\\Asihma\\CSSO\\Lab5\\url.txt", 1024);
+    string NR_MATRICOL = fileToString("C:\\Users\\Asihma\\CSSO\\Lab5\\Nr_matricol.txt", 1024); 
+    string serverUrl = path_url + NR_MATRICOL, method, lastGETResponse;
+
+    hInternetOpen = InternetOpen(NR_MATRICOL.c_str(),
                                 INTERNET_OPEN_TYPE_DIRECT,
                                 NULL, NULL, 0);
     if (hInternetOpen == NULL){
